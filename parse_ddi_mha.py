@@ -75,7 +75,7 @@ def create_ddiMHA_csv( root_path,ddi_file):
     ddi_conv_pivot_table.to_csv(os.path.join(root_path, "ddi_mha_pivot_table.csv"))
     print(s)
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl"
-basename = "llama.log"
+root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\llm"
+basename = "llama_val_16749.log"
 create_ddiMHA_csv(root_path, basename)
 

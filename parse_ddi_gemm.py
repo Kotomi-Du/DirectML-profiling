@@ -55,6 +55,8 @@ def corner_case_gemm(lines,i, gemmcase_dic):
             more_info = ""
             #print(lines[outputdesc_idx +  24])
             for idx in range(exec_flag_idx,exec_flag_idx+14):
+                if idx > len(lines)-1:
+                    break
                 if "OneDNNL can_use_onednn is true" in lines[idx]:
                     onednn_flag = "true"
                 if "OneDNN GEMMs with zero pool is disabled" in  lines[idx]:
@@ -63,6 +65,8 @@ def corner_case_gemm(lines,i, gemmcase_dic):
                     break
             if onednn_flag == "false":
                 for idx in range(exec_flag_idx,exec_flag_idx+10):
+                    if idx > len(lines)-1:
+                        break
                     if "Passed-Metacommand type" in lines[idx]:
                         break
                     if "support" in lines[idx]:
@@ -122,11 +126,14 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
                 inputB_shape.append(int(lines[kernel_name_idx+27 +j].rstrip().split("=")[-1],16))
            
             inputC_flag = ""
+            inputC_shape = []
             if "IsNull" in lines[kernel_name_idx + 43]:
                 inputC_flag = "isnull"
                 outputdesc_idx = kernel_name_idx + 45
             else:
-                inputC_flag = "has_value"
+                inputC_flag = re.findall(r'\((.*?)\)', lines[kernel_name_idx + 44])[0]
+                for j in range(4):
+                    inputC_shape.append(int(lines[kernel_name_idx+46 +j].rstrip().split("=")[-1],16))
                 outputdesc_idx = kernel_name_idx + 62
             transA = "false" if int(lines[outputdesc_idx +  20].rstrip().split("=")[-1],16) == 0 else "true"
             transB = "false" if int(lines[outputdesc_idx +  21].rstrip().split("=")[-1],16) ==0 else "true"
@@ -153,6 +160,8 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
             more_info = ""
             #print(lines[outputdesc_idx +  24])
             for idx in range(exec_flag_idx,exec_flag_idx+14):
+                if idx > len(lines)-1:
+                    break
                 if "OneDNNL can_use_onednn is true" in lines[idx]:
                     onednn_flag = "true"
                 if "OneDNN GEMMs with zero pool is disabled" in  lines[idx]:
@@ -184,7 +193,14 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
                 shape_a = ",".join([str(i) for i in inputA_shape])
                 shape_b = ",".join([str(i) for i in inputB_shape])
                 datatype = "fp32" if inputA_datatype.strip()=="FLOAT32" else "fp16"
-                commandline = ".\cross_runner.exe --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b 
+                substr_b_info = " --b_managed" if inputB_flag.strip() == "MANAGED" else ""
+                substr_b_info += " --b_transposed" if transB == "true" else ""
+                substr_c_info = ""
+                if inputC_flag != "isnull":
+                    substr_c_info = " --shape_c " + ",".join([str(i) for i in inputC_shape])
+                    if inputC_flag.strip() ==  "MANAGED":
+                        substr_c_info += " --c_managed"
+                commandline = ".\cross_runner.exe --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b + substr_b_info + substr_c_info
                 if commandline not in commandline_set:
                     commandline_set.add(commandline)
         corner_case_gemm(lines, i, gemmcase_dic)
@@ -202,7 +218,7 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
             #writer.writerow(item)
     csvf.close()
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\post_pv"
-basename = "alex_newOS.log"
+root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SDXL"
+basename = "convnchw.log"
 commandline_flag = True
 create_ddiGEMM_csv(root_path, basename, commandline_flag)
