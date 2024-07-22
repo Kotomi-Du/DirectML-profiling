@@ -26,24 +26,24 @@ def corner_case_gemm(lines,i, gemmcase_dic):
             inputC_flag = ""
             if "IsNull" in lines[kernel_name_idx + 33]:
                 inputC_flag = "isnull"
-                outputdesc_idx = kernel_name_idx + 32
+                outputdesc_idx = kernel_name_idx + 35
             else:
                 inputC_flag = "has_value"
-                outputdesc_idx = kernel_name_idx + 48
-            transA = "false" if int(lines[outputdesc_idx +  14].rstrip().split("=")[-1],16) == 0 else "true"
-            transB = "false" if int(lines[outputdesc_idx +  15].rstrip().split("=")[-1],16) ==0 else "true"
-            alpha = lines[outputdesc_idx +  16].rstrip().split("=")[-1]
-            beta = lines[outputdesc_idx +  17].rstrip().split("=")[-1]
-            #print( lines[kernel_name_idx +  64])
-            attribute_precision = lines[outputdesc_idx +  13].rstrip().split("=")[-1]
+                outputdesc_idx = kernel_name_idx + 47
+            transA = "false" if int(lines[outputdesc_idx +  15].rstrip().split("=")[-1],16) == 0 else "true"
+            transB = "false" if int(lines[outputdesc_idx +  16].rstrip().split("=")[-1],16) ==0 else "true"
+            alpha = lines[outputdesc_idx +  17].rstrip().split("=")[-1]
+            beta = lines[outputdesc_idx +  18].rstrip().split("=")[-1]
+            # print( lines[outputdesc_idx +  18])
+            attribute_precision = lines[outputdesc_idx +  14].rstrip().split("=")[-1]
             
             exec_flag_idx = 0
-            if "Function" in lines[outputdesc_idx +  19]:
+            if "Function" in lines[outputdesc_idx +  20]:
                 activation =  re.findall(r'\((.*?)\)', lines[kernel_name_idx + 70])[0]
                 exec_flag_idx = outputdesc_idx +  27 # to-do: need to fix
             else:
                 activation = "isnull"
-                exec_flag_idx = outputdesc_idx + 21
+                exec_flag_idx = outputdesc_idx + 22
             #print(lines[exec_flag_idx])
             exec_flag_info = re.findall(r'0x\w+', lines[exec_flag_idx])
             if len(exec_flag_info) > 0:
@@ -184,10 +184,7 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
                               inputB_shape[0], inputB_shape[1],inputB_shape[2], inputB_shape[3], inputB_datatype, inputB_flag,transB, \
                                  inputC_flag,alpha, beta, \
                                  attribute_precision,activation, exec_flag, onednn_flag, zero_pool_memory_size,more_info])
-            if case_hash not in gemmcase_dic.keys():
-                gemmcase_dic[case_hash] = 1
-            else:
-                gemmcase_dic[case_hash] += 1
+            
             
             if generate_cmd_flag :
                 shape_a = ",".join([str(i) for i in inputA_shape])
@@ -203,6 +200,11 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
                 commandline = ".\cross_runner.exe --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b + substr_b_info + substr_c_info
                 if commandline not in commandline_set:
                     commandline_set.add(commandline)
+            case_hash +="," + commandline
+            if case_hash not in gemmcase_dic.keys():
+                gemmcase_dic[case_hash] = 1
+            else:
+                gemmcase_dic[case_hash] += 1
         corner_case_gemm(lines, i, gemmcase_dic)
     total_gemm_count = 0
     for key, value in gemmcase_dic.items():
@@ -218,7 +220,7 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
             #writer.writerow(item)
     csvf.close()
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SDXL"
-basename = "convnchw.log"
+root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SD1.5"
+basename = "d3d12-2281.log"
 commandline_flag = True
 create_ddiGEMM_csv(root_path, basename, commandline_flag)

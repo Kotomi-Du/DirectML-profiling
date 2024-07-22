@@ -30,37 +30,37 @@ def create_ddiMHA_csv( root_path,ddi_file):
             gemm1_B_size = ""
             gemm1_Output_size = ""
 
-            for k in range(50):
-                if "m_mhaGemm0Desc.ADesc.Size" in lines[i-k]:
-                    gemm0_A_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+            for k in range(90,150):
+                if "m_mhaGemm0Desc.ADesc.Size" in lines[i+k]:
+                    gemm0_A_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "m_mhaGemm0Desc.BDesc.Size" in lines[i-k]:
-                    gemm0_B_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+                if "m_mhaGemm0Desc.BDesc.Size" in lines[i+k]:
+                    gemm0_B_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "m_mhaGemm0Desc.OutputDesc.Size" in lines[i-k]:
-                    gemm0_Output_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+                if "m_mhaGemm0Desc.OutputDesc.Size" in lines[i+k]:
+                    gemm0_Output_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "MHA Gemm0 Shader Code" in lines[i-k] or "BLOB Gemm Kernel" in lines[i-k]:
-                    if "MHA Gemm0 Shader Code" in lines[i-k]:
-                        gemm0_kernel_name =  lines[i-k].split('=')[1][:-1]
+                if "MHA Gemm0 Shader Code" in lines[i+k] or "BLOB Gemm Kernel" in lines[i+k]:
+                    if "MHA Gemm0 Shader Code" in lines[i+k]:
+                        gemm0_kernel_name =  lines[i+k].split('=')[1][:-1]
                     else:
-                        gemm0_kernel_name = lines[i-k].split("BLOB Gemm Kernel")[-1].strip().split(".cpp")[0]
+                        gemm0_kernel_name = lines[i+k].split("BLOB Gemm Kernel")[-1].strip().split(".cpp")[0]
                     continue
                 
-                if "m_mhaGemm1Desc.ADesc.Size" in lines[i-k]:
-                    gemm1_A_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+                if "m_mhaGemm1Desc.ADesc.Size" in lines[i+k]:
+                    gemm1_A_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "m_mhaGemm1Desc.BDesc.Size" in lines[i-k]:
-                    gemm1_B_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+                if "m_mhaGemm1Desc.BDesc.Size" in lines[i+k]:
+                    gemm1_B_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "m_mhaGemm1Desc.OutputDesc.Size" in lines[i-k]:
-                    gemm1_Output_size =  re.findall(r'[[](.*?)[]]', lines[i-k])[0]
+                if "m_mhaGemm1Desc.OutputDesc.Size" in lines[i+k]:
+                    gemm1_Output_size =  re.findall(r'[[](.*?)[]]', lines[i+k])[0]
                     continue
-                if "MHA Gemm1 Shader Code" in lines[i-k] or "BLOB Gemm Kernel" in lines[i-k]:
-                    if "MHA Gemm1 Shader Code" in lines[i-k]:
-                        gemm1_kernel_name =  lines[i-k].split('=')[1][:-1]
+                if "MHA Gemm1 Shader Code" in lines[i+k] or "BLOB Gemm Kernel" in lines[i+k]:
+                    if "MHA Gemm1 Shader Code" in lines[i+k]:
+                        gemm1_kernel_name =  lines[i+k].split('=')[1][:-1]
                     else:
-                        gemm1_kernel_name = lines[i-k].split("BLOB Gemm Kernel")[-1].strip().split(".cpp")[0]
+                        gemm1_kernel_name = lines[i+k].split("BLOB Gemm Kernel")[-1].strip().split(".cpp")[0]
                     continue
             
             writer.writerow([mc_type,gemm0_kernel_name, gemm0_A_size, gemm0_B_size,gemm0_Output_size,
@@ -75,7 +75,7 @@ def create_ddiMHA_csv( root_path,ddi_file):
     ddi_conv_pivot_table.to_csv(os.path.join(root_path, "ddi_mha_pivot_table.csv"))
     print(s)
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\llm"
-basename = "llama_val_16749.log"
+root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SD1.5"
+basename = "d3d12-2281.log"
 create_ddiMHA_csv(root_path, basename)
 
