@@ -17,7 +17,7 @@ def create_ddiQGEMM_csv(root_path, basename, generate_cmd_flag = False):
     line = ["kernel_name","inputA_shape_batch","inputA_shape_channel","inputA_shape_M","inputA_shape_K", "inputA_datatype","inputA_flag","transA",\
        "inputB_shape_batch","inputB_shape_channle","inputB_shape_K","inputB_shape_N", "inputB_datatype","inputB_flag","transB",\
         "inputC_flag", "inputC_broadcast","alpha","beta",\
-             "attribute_precision", "activation","exec_flag","case_count"]
+             "attribute_precision", "activation","exec_flag","bquantizedDesc0_shape", "bquantizedDesc1_shape", "case_count"]
     writer.writerow(line)
     gemmcase_dic = {}
     commandline_set = set()
@@ -48,6 +48,7 @@ def create_ddiQGEMM_csv(root_path, basename, generate_cmd_flag = False):
             inputC_broadcast = "False"
             if "IsNull" in lines[kernel_name_idx + 43]:
                 inputC_flag = "isnull"
+                bquantizedDesc0_idx = kernel_name_idx + 57
                 outputdesc_idx = kernel_name_idx + 127
             else:
                 inputC_flag = re.findall(r'\((.*?)\)', lines[kernel_name_idx + 44])[0]
@@ -57,7 +58,7 @@ def create_ddiQGEMM_csv(root_path, basename, generate_cmd_flag = False):
                     inputC_stride.append(int(lines[kernel_name_idx+50 +j].rstrip().split("=")[-1],16))
                 if inputC_stride[2] == 0 and inputC_shape[2] != 1:
                     inputC_broadcast = "True"
-                    print(kernel_name_idx, lines[kernel_name_idx+144 ])
+                bquantizedDesc0_idx = kernel_name_idx + 74
                 outputdesc_idx = kernel_name_idx + 144
             
             attribute_precision = lines[outputdesc_idx +  19].rstrip().split("=")[-1]
@@ -92,15 +93,18 @@ def create_ddiQGEMM_csv(root_path, basename, generate_cmd_flag = False):
                 if "Unsupported parameters of quantized gemm" in lines[idx]:
                     kernel_name = "no kernel available"
                     break
-    
-           
-            if exec_flag == 0 :
-                print(lines[exec_flag_idx],exec_flag_idx)
+
+            bquantizedDesc0_shape = []
+            bquantizedDesc1_shape = []
+            for j in range(4):
+                bquantizedDesc0_shape.append(int(lines[bquantizedDesc0_idx + 4 + j].rstrip().split("=")[-1],16))
+            for j in range(4):
+                bquantizedDesc1_shape.append(int(lines[bquantizedDesc0_idx + 24 + j].rstrip().split("=")[-1],16))
             
             case_hash = ",".join(str(i) for i in [ kernel_name, inputA_shape[0], inputA_shape[1],inputA_shape[2], inputA_shape[3], inputA_datatype, inputA_flag,transA,\
                               inputB_shape[0], inputB_shape[1],inputB_shape[2], inputB_shape[3], inputB_datatype, inputB_flag,transB, \
                                  inputC_flag, inputC_broadcast, alpha, beta, \
-                                 attribute_precision,activation, exec_flag])
+                                 attribute_precision,activation, exec_flag, ";".join([str(i) for i in bquantizedDesc0_shape]), ";".join([str(i) for i in bquantizedDesc1_shape])])
             if case_hash not in gemmcase_dic.keys():
                 gemmcase_dic[case_hash] = 1
             else:
