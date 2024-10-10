@@ -87,9 +87,9 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             
             filter_groupcount =int( re.findall(r'0x\w+', lines[outputdesc_idx+40])[0],16)
             exec_flag_idx = 0
-            if "Function" in lines[outputdesc_idx +  41]:
+            if "Function" in lines[outputdesc_idx +  42]:
                 activation =  re.findall(r'\((.*?)\)', lines[outputdesc_idx + 42])[0]
-                exec_flag_idx = outputdesc_idx +  27 # to-do: need to fix
+                exec_flag_idx = outputdesc_idx +  46 # to-do: need to fix
             else:
                 activation = "isnull"
                 exec_flag_idx = outputdesc_idx + 44
@@ -107,7 +107,6 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
                 layout_str = matches[1].split(',')
             #print(kernel_name_idx, lines[dim_idx], lines[layout_idx])
 
-            #print(lines[outputdesc_idx+1],layout_str,lines[outputdesc_idx+2])
             info_dic ={}
             input_layout, filter_layout, output_layout = layout_str
             input_datatype = re.findall(r'\((.*?)\)', lines[i+5])[0]
@@ -181,7 +180,7 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             #writer.writerow(item)
     csvf.close()
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SDXL"
-basename = "convnchw.log"
-commandline_flag = True
+root_path = r"C:\Users\yarudu\Documents\Profiling\ARL\model"
+basename = "alex_dnnl_enabled.log"
+commandline_flag = False
 create_ddiConv_csv(root_path, basename, commandline_flag)
