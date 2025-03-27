@@ -1,0 +1,17 @@
+# RLSettings YAML file <do not edit this comment>
+# vim: ft=yaml:
+AUB_CAPTURE_OUTPUT_DIR: C:\Users\gta\Documents\yaru\tool\aubfile
+Command: cross_runner.exe
+CommandArgs: --type=gemm_dml --iters=1 --no_conform=1 gemm_opts --gemm_type ab --data_type
+  fp32  --layout nchw --shape_a 1,1,1,2048 --shape_b 1,1,2048,1000 --shape_c 1,1,1,1000
+  --b_managed --c_managed
+CommandDir: C:\Users\gta\Documents\yaru\project\cross_runner\
+D3D12_DISABLEDISKSHADERCACHE: 255
+D3D12_DISABLEDLLLOADFROMPROCESSDIR: true
+D3D12_DISABLEPAVP: true
+D3D12_DISABLEPAVPRUNALONE: true
+D3D12_USERDEFINEDDRIVERPATH: C:\Users\gta\Documents\yaru\driver_repo\gfx-driver-ci-master-16749
+Enable AUB Capture: true
+Simulated Platform: xe2_lpg
+Simulated SKU: LNL_2x4
+Simulated SKU stepping: Default (B0)
