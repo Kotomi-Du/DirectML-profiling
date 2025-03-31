@@ -12,10 +12,10 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
     csvf = open(csv_file,"w",newline='')
     writer =csv.writer(csvf)
 
-    line =["model_name", "kernel_name","input_shape_n","input_shape_c","input_shape_h","input_shape_w", "input_layout", "input_datatype","input_flag","input_padding",\
+    line =["model_name", "kernel_name","input_shape_n","input_shape_c","input_shape_h","input_shape_w", "input_layout", "input_datatype","input_flag","input_stride","input_padding",\
             "filter_shape_n","filter_shape_c","filter_shape_h","filter_shape_w", "filter_layout", "filter_datatype","filter_flag", "filter_stride_h", "filter_stride_w", "filter_stride_c", "filter_dilation_h", "filter_dilation_w", "filter_dilation_c", "filter_groupcount",
             "output_shape_n","output_shape_c","output_shape_h","output_shape_w", "output_layout", "output_datatype","output_flag", "output_padding", 
-            "bias", "bias_flag","direction", "activation" ,"exec_flag", "conv_count"]
+            "bias", "bias_flag","direction", "activation" ,"exec_flag", "commandline", "conv_count"]
     writer.writerow(line)
     case_dic = {}
     commandline_set = set()
@@ -29,7 +29,7 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             #print(lines[i-12:i])
             mc_type = lines[i].rstrip().split("type :")[-1]
             
-            kernel_name_idx = i
+            kernel_name_idx = i 
             kernel_name = "Convolution1"
 
             input_datatype = re.findall(r'\((.*?)\)', lines[kernel_name_idx+5])[0]
@@ -38,6 +38,10 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             for j in range(4):
                 input_shape.append(int(lines[kernel_name_idx+8 + j].rstrip().split("=")[-1],16))
 
+            input_stride = []
+            for j in range(3):
+                input_stride.append(int(lines[kernel_name_idx+12+j].rstrip().split("=")[-1],16))
+            input_stride_str = ";".join([str(i) for i in input_stride])
             filter_datatype = re.findall(r'\((.*?)\)', lines[kernel_name_idx+24])[0]
             filter_flag =  re.findall(r'\((.*?)\)', lines[kernel_name_idx+25])[0]
             filter_shape = []
@@ -46,7 +50,9 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             #layout
             outputdesc_idx = 0
             bias_value = ""
-            if "IsNull" in lines[kernel_name_idx+42]:
+            bias_flag = ""
+            print(lines[kernel_name_idx+43])
+            if "IsNull" in lines[kernel_name_idx+43]:
                 bias_value = "isnull"
                 outputdesc_idx = i+5+38+2
             else:
@@ -102,9 +108,13 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
 
             layout_str = ""
             #print(lines[layout_idx].rstrip(), layout_idx,kernel_name_idx)
-            matches = re.findall(r'\((.*?)\)', lines[exec_flag_idx + 5])
-            if len(matches) > 1:
-                layout_str = matches[1].split(',')
+            if exec_flag_idx + 5 < len(lines):
+
+                matches = re.findall(r'\((.*?)\)', lines[exec_flag_idx + 5])
+                if len(matches) > 1:
+                    layout_str = matches[1].split(',')
+            else:
+                layout_str = ["isnull", "isnull", "isnull"]
             #print(kernel_name_idx, lines[dim_idx], lines[layout_idx])
 
             info_dic ={}
@@ -140,32 +150,32 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             else:
                 kernel_name += " oneDNN Conv"
 
-            case_hash = ",".join(str(i) for i in [basename, kernel_name, input_shape[0], input_shape[1], input_shape[2], input_shape[3], input_layout, input_datatype, input_flag,input_padding_str,\
+            case_hash = ",".join(str(i) for i in [basename, kernel_name, input_shape[0], input_shape[1], input_shape[2], input_shape[3], input_layout, input_datatype, input_flag,input_stride_str,input_padding_str,\
                               filter_shape[0],filter_shape[1],filter_shape[2],filter_shape[3], filter_layout, filter_datatype, filter_flag, filter_stride[0], filter_stride[1],filter_stride[2],filter_dilation[0],filter_dilation[1],filter_dilation[2], filter_groupcount, \
                                 output_shape[0],output_shape[1],output_shape[2],output_shape[3], output_layout, output_datatype, output_flag, output_padding_str,
                                 bias, bias_flag,direction, activation, exec_flag])
+                  
+            if generate_cmd_flag :
+                input_shape = ",".join([str(i) for i in input_shape])
+                filter_shape = ",".join([str(i) for i in filter_shape])
+                filter_stride = ",".join([str(i) for i in filter_stride])
+                datatype = "fp32" if input_datatype.strip()=="FLOAT32" else "fp16"
+                bias_flag = str(1) if bias_value.strip() == "isnull" else str(0)
+                activation_id = "0"
+                if "LEAKY_RELU" in activation:
+                    activation_id = "2"
+                elif "RELU" in activation:
+                    activation_id = "1"
+                commandline = ".\cross_runner.exe --type=conv_dml --volatile_flag=0 --iters=10 --no_conform=1 conv_opts --input_shape=" + input_shape + " --filter_shape=" + filter_shape + " --in_pad=1 --out_pad=0 --stride=1,1,1,1 --data_type=" + datatype + " --input_layout=" + input_layout.strip() + " --output_layout=" + output_layout.strip() + " --no_bias=" + bias_flag + " --activation=" + activation_id + " --managed_weights --dnnl_reference"
+                if commandline not in commandline_set:
+                    commandline_set.add(commandline)
+            case_hash +="," + commandline
             if case_hash not in case_dic.keys():
                 case_dic[case_hash] = 1
             else:
                 case_dic[case_hash] += 1
             
 
-            
-        #     if generate_cmd_flag :
-        #         shape_a = ",".join([str(i) for i in inputA_shape])
-        #         shape_b = ",".join([str(i) for i in inputB_shape])
-        #         datatype = "fp32" if inputA_datatype.strip()=="FLOAT32" else "fp16"
-        #         substr_b_info = " --b_managed" if inputB_flag.strip() == "MANAGED" else ""
-        #         substr_b_info += " --b_transposed" if transB == "true" else ""
-        #         substr_c_info = ""
-        #         if inputC_flag != "isnull":
-        #             substr_c_info = " --shape_c " + ",".join([str(i) for i in inputC_shape])
-        #             if inputC_flag.strip() ==  "MANAGED":
-        #                 substr_c_info += " --c_managed"
-        #         commandline = ".\cross_runner.exe --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b + substr_b_info + substr_c_info
-        #         if commandline not in commandline_set:
-        #             commandline_set.add(commandline)
-        # corner_case_gemm(lines, i, gemmcase_dic)
     total_count = 0
     for key, value in case_dic.items():
         row = key.split(",")
@@ -180,7 +190,7 @@ def create_ddiConv_csv(root_path, basename, generate_cmd_flag = False):
             #writer.writerow(item)
     csvf.close()
 
-root_path = r"C:\Users\yarudu\Documents\Profiling\ARL\model"
-basename = "alex_dnnl_enabled.log"
-commandline_flag = False
+root_path = r"C:\Users\yarudu\Documents\Profiling\Adobe\PS"
+basename = "DDI_conv.log"
+commandline_flag = True
 create_ddiConv_csv(root_path, basename, commandline_flag)

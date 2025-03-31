@@ -187,6 +187,10 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
             
             
             if generate_cmd_flag :
+                if transB == "true":
+                    temp = inputB_shape[2] 
+                    inputB_shape[2] = inputB_shape[3]
+                    inputB_shape[3] = temp
                 shape_a = ",".join([str(i) for i in inputA_shape])
                 shape_b = ",".join([str(i) for i in inputB_shape])
                 datatype = "fp32" if inputA_datatype.strip()=="FLOAT32" else "fp16"
@@ -197,7 +201,7 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
                     substr_c_info = " --shape_c " + ",".join([str(i) for i in inputC_shape])
                     if inputC_flag.strip() ==  "MANAGED":
                         substr_c_info += " --c_managed"
-                commandline = ".\cross_runner.exe --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b + substr_b_info + substr_c_info
+                commandline = ".\cross_runner.exe --no_conform=1 --type=gemm_dml --iters=1 gemm_opts --gemm_type ab --data_type "+ datatype + "  --layout nchw --shape_a " + shape_a + " --shape_b " +shape_b + substr_b_info + substr_c_info
                 if commandline not in commandline_set:
                     commandline_set.add(commandline)
             case_hash +="," + commandline
@@ -220,7 +224,7 @@ def create_ddiGEMM_csv(root_path, basename, generate_cmd_flag = False):
             #writer.writerow(item)
     csvf.close()
 
-root_path = r"C:\Users\GAME\Documents\Project\helpWindow\onednn_lnl\SD1.5"
-basename = "d3d12-2281.log"
+root_path = r"C:\Users\yarudu\Documents\Profiling\LNL\LLM"
+basename = "2971_N02.log"
 commandline_flag = True
 create_ddiGEMM_csv(root_path, basename, commandline_flag)
